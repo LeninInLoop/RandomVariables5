@@ -99,7 +99,7 @@ def main():
 
     summation = 0
     for i in range(1, SAMPLES_OF_WIENER + 1):
-        summation += result_dict[i + N]
+        summation += result_dict[i + N] * s
     print(50 * "-" + "\nsummation and mean after Wiener process starts at 1 million samples:\n"
                      f"- Summation was over {SAMPLES_OF_WIENER} samples")
     print("Summation:",summation)
