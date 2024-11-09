@@ -13,38 +13,34 @@ T = 10 ** (-6)
 N = 10 ** 6
 SAMPLES_OF_WIENER = 10 ** 4
 
-def heads_or_tails(method: int = RAND) -> int:
+def heads_or_tails(method: int = RAND, step_size : float = 0.001) -> float:
     if method == RAND:
-        random_number : float = np.random.rand(1)
-        if random_number < 0.5:
-            return 1
-        elif random_number > 0.5:
-            return -1
+        random_number: float = np.random.rand()
+        return step_size if random_number < 0.5 else -step_size
     else:
-        outcomes = [-1, 1]
-        return int(np.random.choice(outcomes))
+        outcomes = [-step_size, step_size]
+        return np.random.choice(outcomes)
 
-def calculate_cumulative_sum(dict_to_calculate: Dict[int, int]) -> Dict[int, int]:
+def calculate_cumulative_sum(dict_to_calculate: Dict[int, float]) -> Dict[int, float]:
     cumulative_sum = 0
     new_dict = {}
-    for i in range(N + SAMPLES_OF_WIENER + 1):
-        if i in dict_to_calculate:
-            cumulative_sum += dict_to_calculate[i]
-        new_dict[i] = cumulative_sum
+    for key in dict_to_calculate:  # Iterate over the keys in the dictionary
+        cumulative_sum += dict_to_calculate[key]
+        new_dict[key] = cumulative_sum
     return new_dict
 
 def plot_wiener_process(
-        result_dict: Dict[int, int],
+        result_dict: Dict[int, float],
         display : bool = False,
         filename: str = "wiener_plot.png",
     ) -> None:
 
-    s_to_power_of_two = ALPHA * T
-    s = np.sqrt(s_to_power_of_two) # Steps should be s. if its 1 +s and if its -1 then it should be -s
+    variance = ALPHA * T
+    std = np.sqrt(variance)
 
     new_dict = calculate_cumulative_sum(result_dict)
     keys = [key / N for key in new_dict.keys()] # X values (number of samples)
-    values = [value * s for value in new_dict.values()] # Y values (Cumulative sum of everything before the current sample)
+    values = [value for value in new_dict.values()] # Y values (Cumulative sum of everything before the current sample)
 
     plt.figure(figsize=(10, 6))
     plt.plot(keys, values, label="Cumulative Sum", color='b', linewidth=1)
@@ -61,6 +57,28 @@ def plot_wiener_process(
         plt.show()
     else:
         plt.close()
+
+
+def auto_correlation(wiener_process, t0, t1):
+    """Compute the autocorrelation at times t0 and t1."""
+    # Convert time to indices
+    idx_t0 = int(t0)
+    idx_t1 = int(t1)
+
+    # Ensure indices are within bounds
+    if idx_t0 >= len(wiener_process) or idx_t1 >= len(wiener_process):
+        raise ValueError("Times t0 and t1 are out of range")
+
+    # Calculate the product of the values at the two time points
+    product = wiener_process[idx_t0] * wiener_process[idx_t1]
+
+    # Return the expected value (mean of the product)
+    return product
+
+
+def theoretical_autocorrelation(t0, t1):
+    """Theoretical autocorrelation for a Wiener process."""
+    return min(t0, t1)
 
 def main():
 
@@ -92,18 +110,31 @@ def main():
     print(50 * "-" + "\nWiener process starts at:")
     print("t = N * T =",t , "Second")
 
-    result_dict = { value: 0 for value in range(10 ** 6 + SAMPLES_OF_WIENER + 1)}
-    for i in result_dict.keys():
-        result_dict[i] = heads_or_tails(method=RAND)
+    # Generate the Wiener process steps
+    results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(N + SAMPLES_OF_WIENER + 1)]
+    result_dict = {i: results[i] for i in range(N + SAMPLES_OF_WIENER + 1)}
     print(result_dict)
 
-    summation = 0
-    for i in range(1, SAMPLES_OF_WIENER + 1):
-        summation += result_dict[i + N] * s
+    summation = sum(result_dict[i + N] for i in range(SAMPLES_OF_WIENER + 1))
     print(50 * "-" + "\nsummation and mean after Wiener process starts at 1 million samples:\n"
                      f"- Summation was over {SAMPLES_OF_WIENER} samples")
-    print("Summation:",summation)
-    print("Mean:",summation / SAMPLES_OF_WIENER)
+    print("Summation:", summation)
+
+    mean = summation / SAMPLES_OF_WIENER
+    print("Mean:", mean)
+
+    # Variance calculation
+    sum_squared = sum((result_dict[i + N] - mean) ** 2 for i in range(SAMPLES_OF_WIENER + 1))
+    variance_calculated = sum_squared / SAMPLES_OF_WIENER
+    print("Variance:", variance_calculated)
+
+    # Calculate Rx(t1, t2) for two specific time points
+    t0 = (N + 1) * T  # Time point 1 (e.g., 1000 steps after N)
+    t1 = (N + 2) * T  # Time point 2 (e.g., 2000 steps after N)
+
+    print(50 * "-" + "\nAuto correlation at t0 and t1:")
+    Rx = auto_correlation(results, t0, t1)
+    print(f"Rx({t0}, {t1}) =", Rx)
 
     plot_wiener_process(
         result_dict,
