@@ -58,31 +58,6 @@ def plot_wiener_process(
     else:
         plt.close()
 
-def calculate_autocorrelation(data: np.ndarray, max_lag: int) -> np.ndarray:
-    """Calculates the autocorrelation of a given dataset up to a specified lag.
-
-    Args:
-        data: The time series data as a NumPy array.
-        max_lag: The maximum lag to calculate autocorrelation for.
-
-    Returns:
-        An array containing the autocorrelation values at each lag from 0 to max_lag.
-    """
-
-    n = len(data)
-    mean = np.mean(data)
-    variance = np.var(data)
-
-    autocorr = np.zeros(max_lag + 1)
-    for lag in range(max_lag + 1):
-        if lag == 0:
-            autocorr[lag] = 1.0  # Autocorrelation at lag 0 is always 1
-        else:
-            covariance = np.mean((data[:n - lag] - mean) * (data[lag:] - mean))
-            autocorr[lag] = covariance / variance
-
-    return autocorr
-
 def main():
 
     results_with_choice_method = []
