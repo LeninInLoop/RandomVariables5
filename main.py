@@ -114,6 +114,10 @@ def main():
         filename="wiener_plot.png",
     )
 
+    cumulative_sum = calculate_cumulative_sum(result_dict)
+    X = np.array([list(cumulative_sum.values())[N+1:]])
+    print("Covariance:", np.cov(X))
+
 if __name__ == '__main__':
     main()
 
