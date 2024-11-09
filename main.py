@@ -35,15 +35,17 @@ def plot_wiener_process(
         filename: str = "wiener_plot.png",
     ) -> None:
 
-    variance = ALPHA * T
-    std = np.sqrt(variance)
-
     new_dict = calculate_cumulative_sum(result_dict)
-    keys = [key / N for key in new_dict.keys()] # X values (number of samples)
-    values = [value for value in new_dict.values()] # Y values (Cumulative sum of everything before the current sample)
+    times = [key / N for key in new_dict.keys()] # X values (number of samples)
+    values = new_dict.values() # Y values (Cumulative sum of everything before the current sample)
 
     plt.figure(figsize=(10, 6))
-    plt.plot(keys, values, label="Cumulative Sum", color='b', linewidth=1)
+    plt.plot(times, values, label="Cumulative Sum", color='b', linewidth=1)
+
+    # Add theoretical bounds
+    std = np.sqrt(ALPHA * times)
+    plt.plot(times, 2 * std, 'r--', alpha=0.5, label='±2σ bounds')
+    plt.plot(times, -2 * std, 'r--', alpha=0.5)
 
     plt.xlabel("Second")
     plt.ylabel("Cumulative Sum")
