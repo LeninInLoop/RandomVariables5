@@ -58,27 +58,30 @@ def plot_wiener_process(
     else:
         plt.close()
 
+def calculate_autocorrelation(data: np.ndarray, max_lag: int) -> np.ndarray:
+    """Calculates the autocorrelation of a given dataset up to a specified lag.
 
-def auto_correlation(wiener_process, t0, t1):
-    """Compute the autocorrelation at times t0 and t1."""
-    # Convert time to indices
-    idx_t0 = int(t0)
-    idx_t1 = int(t1)
+    Args:
+        data: The time series data as a NumPy array.
+        max_lag: The maximum lag to calculate autocorrelation for.
 
-    # Ensure indices are within bounds
-    if idx_t0 >= len(wiener_process) or idx_t1 >= len(wiener_process):
-        raise ValueError("Times t0 and t1 are out of range")
+    Returns:
+        An array containing the autocorrelation values at each lag from 0 to max_lag.
+    """
 
-    # Calculate the product of the values at the two time points
-    product = wiener_process[idx_t0] * wiener_process[idx_t1]
+    n = len(data)
+    mean = np.mean(data)
+    variance = np.var(data)
 
-    # Return the expected value (mean of the product)
-    return product
+    autocorr = np.zeros(max_lag + 1)
+    for lag in range(max_lag + 1):
+        if lag == 0:
+            autocorr[lag] = 1.0  # Autocorrelation at lag 0 is always 1
+        else:
+            covariance = np.mean((data[:n - lag] - mean) * (data[lag:] - mean))
+            autocorr[lag] = covariance / variance
 
-
-def theoretical_autocorrelation(t0, t1):
-    """Theoretical autocorrelation for a Wiener process."""
-    return min(t0, t1)
+    return autocorr
 
 def main():
 
@@ -127,14 +130,6 @@ def main():
     sum_squared = sum((result_dict[i + N] - mean) ** 2 for i in range(SAMPLES_OF_WIENER + 1))
     variance_calculated = sum_squared / SAMPLES_OF_WIENER
     print("Variance:", variance_calculated)
-
-    # Calculate Rx(t1, t2) for two specific time points
-    t0 = (N + 1) * T  # Time point 1 (e.g., 1000 steps after N)
-    t1 = (N + 2) * T  # Time point 2 (e.g., 2000 steps after N)
-
-    print(50 * "-" + "\nAuto correlation at t0 and t1:")
-    Rx = auto_correlation(results, t0, t1)
-    print(f"Rx({t0}, {t1}) =", Rx)
 
     plot_wiener_process(
         result_dict,
