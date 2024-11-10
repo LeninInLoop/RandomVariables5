@@ -1,5 +1,3 @@
-from statistics import covariance
-
 import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
@@ -13,7 +11,7 @@ CHOICE = 1
 ALPHA = 1
 T = 10 ** (-6)
 N = 10 ** 6
-SAMPLES_OF_WIENER = 10 ** 6
+SAMPLES_OF_WIENER = 10 ** 4
 
 def heads_or_tails(method: int = RAND, step_size : float = 0.001) -> float:
     if method == RAND:
@@ -63,74 +61,97 @@ def plot_wiener_process(
         plt.close()
 
 def main():
+    # 1. Initial coin flip simulations
+    TRIALS = 100
+    choice_results = [heads_or_tails(method=CHOICE) for _ in range(TRIALS)]
+    rand_results = [heads_or_tails(method=RAND) for _ in range(TRIALS)]
 
-    results_with_choice_method = []
-    results_with_rand_method = []
-    for i in range(100):
-        results_with_choice_method.append(heads_or_tails(method=CHOICE))
-        results_with_rand_method.append(heads_or_tails(method=RAND))
+    # Print results of coin flip methods
+    print("-" * 50 + "\nCounted results from Choice method:")
+    print(Counter(choice_results))
 
-    print(50 * "-" + "\nCounted results from Choice method:")
-    counted_results = Counter(results_with_choice_method)
-    print(counted_results)
+    print("-" * 50 + "\nCounted results from RAND method:")
+    print(Counter(rand_results))
 
-    print(50 * "-" + "\nCounted results from RAND method:")
-    counted_results = Counter(results_with_rand_method)
-    print(counted_results)
+    # 2. Calculate and display hyper parameters
+    variance = ALPHA * T
+    std_dev = np.sqrt(variance)
 
-    s_to_power_of_two = ALPHA * T
-    s = np.sqrt(s_to_power_of_two)
-    print(50 * "-" + "\nHyper parameters:")
+    print("-" * 50 + "\nHyper parameters:")
     print("ALPHA =", ALPHA)
     print("T =", T)
-    print("S^2 = ALPHA * T =", s_to_power_of_two)
-    print("S =", s)
+    print("S^2 = ALPHA * T =", variance)
+    print("S =", std_dev)
     print("N =", N)
     print("Samples of wiener =", SAMPLES_OF_WIENER)
 
-    t = N * T
-    print(50 * "-" + "\nWiener process starts at:")
-    print("t = N * T =",t , "Second")
+    # 3. Wiener process initialization
+    process_start_time = N * T
+    print("-" * 50 + "\nWiener process starts at:")
+    print("t = N * T =", process_start_time, "Second")
 
-    # Generate the Wiener process steps
-    results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(N + SAMPLES_OF_WIENER + 1)]
-    result_dict = {i: results[i] for i in range(N + SAMPLES_OF_WIENER + 1)}
-    print(result_dict)
+    # 4. Generate Wiener process
+    total_samples = N + SAMPLES_OF_WIENER + 1
+    wiener_results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(total_samples)]
+    wiener_dict = {i: wiener_results[i] for i in range(total_samples)}
 
-    summation = sum(result_dict[i + N] for i in range(SAMPLES_OF_WIENER + 1))
-    print(50 * "-" + "\nsummation and mean after Wiener process starts at 1 million samples:\n"
-                     f"- Summation was over {SAMPLES_OF_WIENER} samples")
-    print("Summation:", summation)
+    # 5. Calculate statistics
+    sample_sum = sum(wiener_dict[i + N] for i in range(SAMPLES_OF_WIENER + 1))
+    sample_mean = sample_sum / SAMPLES_OF_WIENER
 
-    mean = summation / SAMPLES_OF_WIENER
-    print("Mean:", mean)
+    print("-" * 50 + "\nsummation and mean after Wiener process starts at 1 million samples:")
+    print(f"- Summation was over {SAMPLES_OF_WIENER} samples")
+    print("Summation:", sample_sum)
+    print("Mean:", sample_mean)
 
-    # Variance calculation
-    sum_squared = sum((result_dict[i + N] - mean) ** 2 for i in range(SAMPLES_OF_WIENER + 1))
-    variance_calculated = sum_squared / SAMPLES_OF_WIENER
-    print("Variance:", variance_calculated)
+    # Calculate variance
+    squared_deviations_sum = sum((wiener_dict[i + N] - sample_mean) ** 2
+                                 for i in range(SAMPLES_OF_WIENER + 1))
+    sample_variance = squared_deviations_sum / SAMPLES_OF_WIENER
+    print("Variance:", sample_variance)
 
-    new_result_values = list(dict(list(result_dict.items())[N:]).values())
-    new_result_dict = {i:new_result_values[i] for i in range(SAMPLES_OF_WIENER)}
+    # 6. Plot full Wiener process
+    plot_wiener_process(
+        wiener_dict,
+        display=True,
+        filename="wiener_plot_starts_at_1sec_extended.png",
+    )
+
+    # 7. Create and plot truncated process
+    truncated_values = list(dict(list(wiener_dict.items())[N:]).values())
+    truncated_dict = {i: truncated_values[i] for i in range(SAMPLES_OF_WIENER)}
 
     plot_wiener_process(
-        new_result_dict,
+        truncated_dict,
         display=True,
         filename="wiener_plot.png",
     )
 
-    t0 = 1000
-    t1 = 1500
-    covariance_result = []
-    for i in range(100):
-        results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(N + SAMPLES_OF_WIENER + 1)]
-        result_dict = {i: results[i] for i in range(N + SAMPLES_OF_WIENER + 1)}
-        new_result_values = list(dict(list(result_dict.items())[N:]).values())
-        new_result_dict = {i: new_result_values[i] for i in range(SAMPLES_OF_WIENER)}
-        cumulative_sum = calculate_cumulative_sum(new_result_dict)
-        covariance_result.append(list(cumulative_sum.values())[t0] * list(cumulative_sum.values())[t1])
-    print(covariance_result)
-    print(np.mean(covariance_result))
+    # 8. Covariance calculation
+    TIME_0 = 1000
+    TIME_1 = 2000
+    COVARIANCE_TRIALS = 200
+
+    covariance_results = []
+    for _ in range(COVARIANCE_TRIALS):
+        # Generate new process
+        trial_results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(N + TIME_1 + 1)]
+        trial_dict = {i: trial_results[i] for i in range(N + TIME_1 + 1)}
+
+        # Process results
+        trial_values = list(dict(list(trial_dict.items())[N:]).values())
+        trial_process = {i: trial_values[i] for i in range(TIME_1 + 1)}
+        cumulative_sums = calculate_cumulative_sum(trial_process)
+
+        # Calculate covariance
+        covariance_results.append(
+            list(cumulative_sums.values())[TIME_0] * list(cumulative_sums.values())[TIME_1]
+        )
+
+    print("-" * 50 + "\nRx(0.001,0.002) equals to:")
+    print(np.mean(covariance_results))
+    print("Wiener Rx(t0,t1) should be ALPHA * min(t0,t1) theoretically.\n"
+          "ALPHA is equal to one so that the Rx(0.001,0.002) should be 0.001.")
 
 if __name__ == '__main__':
     main()
