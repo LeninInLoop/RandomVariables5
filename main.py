@@ -1,3 +1,5 @@
+from statistics import covariance
+
 import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
@@ -11,7 +13,7 @@ CHOICE = 1
 ALPHA = 1
 T = 10 ** (-6)
 N = 10 ** 6
-SAMPLES_OF_WIENER = 10 ** 4
+SAMPLES_OF_WIENER = 10 ** 6
 
 def heads_or_tails(method: int = RAND, step_size : float = 0.001) -> float:
     if method == RAND:
@@ -108,15 +110,27 @@ def main():
     variance_calculated = sum_squared / SAMPLES_OF_WIENER
     print("Variance:", variance_calculated)
 
+    new_result_values = list(dict(list(result_dict.items())[N:]).values())
+    new_result_dict = {i:new_result_values[i] for i in range(SAMPLES_OF_WIENER)}
+
     plot_wiener_process(
-        result_dict,
+        new_result_dict,
         display=True,
         filename="wiener_plot.png",
     )
 
-    cumulative_sum = calculate_cumulative_sum(result_dict)
-    X = np.array([list(cumulative_sum.values())[N+1:]])
-    print("Covariance:", np.cov(X))
+    t0 = 1000
+    t1 = 1500
+    covariance_result = []
+    for i in range(100):
+        results = [heads_or_tails(method=RAND, step_size=0.001) for _ in range(N + SAMPLES_OF_WIENER + 1)]
+        result_dict = {i: results[i] for i in range(N + SAMPLES_OF_WIENER + 1)}
+        new_result_values = list(dict(list(result_dict.items())[N:]).values())
+        new_result_dict = {i: new_result_values[i] for i in range(SAMPLES_OF_WIENER)}
+        cumulative_sum = calculate_cumulative_sum(new_result_dict)
+        covariance_result.append(list(cumulative_sum.values())[t0] * list(cumulative_sum.values())[t1])
+    print(covariance_result)
+    print(np.mean(covariance_result))
 
 if __name__ == '__main__':
     main()
