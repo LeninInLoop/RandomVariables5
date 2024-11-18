@@ -13,14 +13,6 @@ T = 10 ** (-6)
 N = 10 ** 6
 SAMPLES_OF_WIENER = 10 ** 6
 
-def heads_or_tails(method: int = RAND, step_size : float = 0.001) -> float:
-    if method == RAND:
-        random_number: float = np.random.rand()
-        return step_size if random_number < 0.5 else -step_size
-    else:
-        outcomes = [-step_size, step_size]
-        return np.random.choice(outcomes)
-
 def heads_or_tails_vectorized(method: int = RAND, step_size: float = 0.001, num_samples: int = N + SAMPLES_OF_WIENER + 1) -> np.ndarray:
   if method == RAND:
     random_numbers = np.random.rand(num_samples)
@@ -31,14 +23,6 @@ def heads_or_tails_vectorized(method: int = RAND, step_size: float = 0.001, num_
 
 def calculate_cumulative_sum_vectorized(values: np.ndarray) -> np.ndarray:
   return np.cumsum(values)
-
-def calculate_cumulative_sum(dict_to_calculate: Dict[int, float]) -> Dict[int, float]:
-    cumulative_sum = 0
-    new_dict = {}
-    for key in dict_to_calculate:  # Iterate over the keys in the dictionary
-        cumulative_sum += dict_to_calculate[key]
-        new_dict[key] = cumulative_sum
-    return new_dict
 
 def plot_wiener_process(
         result: np.ndarray,
@@ -78,7 +62,7 @@ def main():
     print("-" * 50 + "\nCounted results from RAND method:")
     print(Counter(rand_results))
 
-    # 2. Calculate and display hyper parameters
+    # 2. Calculate and display hyperparameters
     step_length_2 = ALPHA * T
     step_length = np.sqrt(step_length_2)
 
@@ -99,7 +83,7 @@ def main():
     total_samples = N + SAMPLES_OF_WIENER + 1
     wiener_results = heads_or_tails_vectorized(method=RAND, step_size =0.001, num_samples=total_samples)
 
-    sample_sum = np.cumsum(wiener_results[N:])
+    sample_sum = calculate_cumulative_sum_vectorized(wiener_results[N:])
     sample_mean = sample_sum[-1] / SAMPLES_OF_WIENER
 
     print("-" * 50 + "\nsummation and mean after Wiener process starts after 1 million samples:")
@@ -109,7 +93,7 @@ def main():
 
     # 6. Plot full Wiener process
     plot_wiener_process(
-        np.cumsum(wiener_results[:]),
+        calculate_cumulative_sum_vectorized(wiener_results),
         display=True,
         filename="wiener_plot_starts_at_1sec_extended.png",
     )
@@ -130,10 +114,8 @@ def main():
     for _ in range(COVARIANCE_TRIALS):
         # Generate new process
         wiener_results = heads_or_tails_vectorized(method=RAND, step_size =0.001, num_samples= N + TIME_1 + 1)
-
         wiener_results_cumulative_sum = np.cumsum(wiener_results[N:])
 
-        # Calculate covariance
         covariance_results.append(
             wiener_results_cumulative_sum[TIME_0] * wiener_results_cumulative_sum[TIME_1]
         )
