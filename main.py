@@ -12,7 +12,12 @@ T = 10 ** (-6)
 N = 10 ** 6
 SAMPLES_OF_WIENER = 10 ** 6
 
-def heads_or_tails_vectorized(method: int = RAND, step_size: float = 0.001, num_samples: int = N + SAMPLES_OF_WIENER + 1) -> np.ndarray:
+def heads_or_tails_vectorized(
+        method: int = RAND,
+        step_size: float = 0.001,
+        num_samples: int = N + SAMPLES_OF_WIENER + 1
+    ) -> np.ndarray:
+
   if method == RAND:
     random_numbers = np.random.rand(num_samples)
     return np.where(random_numbers < 0.5, step_size, -step_size)
