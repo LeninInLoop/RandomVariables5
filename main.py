@@ -1,7 +1,6 @@
 import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
-from typing import Dict
 
 # Methods for heads or tails (with P of 1/2)
 RAND = 0
